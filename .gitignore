@@ -35,6 +35,15 @@ yarn-error.log*
 # The template carries no values — commit it so the required keys are discoverable.
 !.env.example
 
+# Firebase Admin service account keys. Unlike the NEXT_PUBLIC_* config these are
+# real credentials granting full database access — never commit them.
+service-account.json
+*-service-account.json
+*firebase-adminsdk*.json
+
+# Exported signup data contains personal information.
+/exports/
+
 # vercel
 .vercel
 

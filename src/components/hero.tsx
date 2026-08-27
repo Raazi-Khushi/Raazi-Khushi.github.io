@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { AudienceToggle } from "@/components/audience-toggle";
 import { SiteHeader } from "@/components/site-header";
 import { CtaButton } from "@/components/ui/cta-button";
 import { cn } from "@/lib/cn";
@@ -82,11 +83,18 @@ export function Hero({ audience, onAudienceChange }: HeroProps) {
             onDark ? "bg-deep-teal" : "bg-pale",
           )}
         >
-          <SiteHeader audience={audience} onAudienceChange={onAudienceChange} onDark={onDark} />
+          <SiteHeader audience={audience} onDark={onDark} />
+
+          {/* The toggle moved out of the header to make room for the logo. It
+              sits outside the view-transition-named halves below so the control
+              you just clicked stays put instead of flying across the card. */}
+          <div className="mt-[32px] flex justify-center lg:mt-[40px]">
+            <AudienceToggle value={audience} onChange={onAudienceChange} onDark={onDark} />
+          </div>
 
           <div
             className={cn(
-              "mt-[53px] grid gap-[32px] lg:mt-[113px] lg:items-center lg:gap-10 xl:gap-[77px]",
+              "mt-[32px] grid gap-[32px] lg:mt-[64px] lg:items-center lg:gap-10 xl:gap-[77px]",
               onDark
                 ? "lg:grid-cols-[minmax(0,696fr)_minmax(0,567fr)]"
                 : "lg:grid-cols-[minmax(0,567fr)_minmax(0,696fr)]",
