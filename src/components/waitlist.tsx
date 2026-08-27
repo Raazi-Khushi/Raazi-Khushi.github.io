@@ -11,8 +11,10 @@ import {
   SECTION_HEADINGS,
   type Audience,
 } from "@/lib/content";
+import { isFirebaseConfigured } from "@/lib/firebase";
+import { submitWaitlistEntry } from "@/lib/waitlist";
 
-type Status = "idle" | "done" | "error";
+type Status = "idle" | "sending" | "done" | "error";
 
 export function Waitlist({ audience }: { audience: Audience }) {
   const nameId = useId();
@@ -28,10 +30,9 @@ export function Waitlist({ audience }: { audience: Audience }) {
   const role = pickedRole ?? audience;
 
   // The site is a static export on GitHub Pages, so there is no server to post
-  // to. Validation runs here and the signup is acknowledged but NOT stored.
-  // TODO: point this at a real endpoint (Apps Script / form service) and send
-  // the payload before showing the success message.
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  // to — the browser writes straight to Firestore. Validation below is for the
+  // user's benefit only; the authoritative shape check lives in firestore.rules.
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
@@ -52,8 +53,25 @@ export function Waitlist({ audience }: { audience: Audience }) {
       return;
     }
 
-    setStatus("done");
+    if (!isFirebaseConfigured) {
+      setStatus("error");
+      setError("Signup abhi band hai. Thodi der baad try karein.");
+      return;
+    }
+
+    setStatus("sending");
     setError("");
+
+    try {
+      await submitWaitlistEntry({ fullName, city, phone, role });
+    } catch (cause) {
+      console.error("Waitlist submit failed", cause);
+      setStatus("error");
+      setError("Kuch gadbad ho gayi. Dobara try karein.");
+      return;
+    }
+
+    setStatus("done");
     form.reset();
     setPickedRole(null);
   }
@@ -159,9 +177,10 @@ export function Waitlist({ audience }: { audience: Audience }) {
 
           <button
             type="submit"
-            className="mt-[32px] h-[59px] w-full rounded-[36px] bg-gold font-poppins text-[18px] font-medium text-white transition hover:brightness-105"
+            disabled={status === "sending"}
+            className="mt-[32px] h-[59px] w-full rounded-[36px] bg-gold font-poppins text-[18px] font-medium text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {CTA_LABEL}
+            {status === "sending" ? "Bhej rahe hain…" : CTA_LABEL}
           </button>
 
           <p
