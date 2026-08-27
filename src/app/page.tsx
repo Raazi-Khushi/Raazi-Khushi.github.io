@@ -20,7 +20,7 @@ export default function Home() {
     <main>
       <Hero audience={audience} onAudienceChange={changeAudience} />
       <HowItWorks audience={audience} />
-      <TrustBar />
+      <TrustBar audience={audience} />
       <Waitlist audience={audience} />
       <SiteFooter />
     </main>

@@ -4,12 +4,13 @@ import { useId, useState } from "react";
 import Image from "next/image";
 import { EyebrowPill } from "@/components/ui/eyebrow-pill";
 import { cn } from "@/lib/cn";
-import { CTA_LABEL, type Audience } from "@/lib/content";
-
-const ROLE_OPTIONS = [
-  { value: "married", label: "Shaadi ke liye" },
-  { value: "parent", label: "Parent" },
-] as const;
+import {
+  AUDIENCE_COPY,
+  AUDIENCE_OPTIONS,
+  CTA_LABEL,
+  SECTION_HEADINGS,
+  type Audience,
+} from "@/lib/content";
 
 type Status = "idle" | "done" | "error";
 
@@ -70,9 +71,9 @@ export function Waitlist({ audience }: { audience: Audience }) {
 
       <div className="mx-auto max-w-[1440px] px-[16px] py-[50px] lg:px-[50px] lg:py-[80px]">
         <div className="flex flex-col items-center gap-[12px]">
-          <EyebrowPill>Sirf 2 minute lagenge, vaada.</EyebrowPill>
+          <EyebrowPill>{AUDIENCE_COPY[audience].waitlistEyebrow}</EyebrowPill>
           <h2 className="max-w-[735px] text-center font-poppins text-[36px] font-medium text-white lg:text-[48px] lg:leading-[72px]">
-            Join the Founding Families List
+            {SECTION_HEADINGS.waitlist}
           </h2>
         </div>
 
@@ -81,7 +82,7 @@ export function Waitlist({ audience }: { audience: Audience }) {
           className="mx-auto mt-[38px] w-full max-w-[847px] rounded-[16px] bg-white px-[16px] py-[24px] lg:mt-[50px] lg:rounded-[24px] lg:px-[41px] lg:py-[32px]"
         >
           <h3 className="text-center font-noto text-[28px] font-medium text-deep-teal lg:text-[32px]">
-            Join The Baithak
+            {SECTION_HEADINGS.waitlistForm}
           </h3>
 
           <div className="mt-[24px] grid gap-[16px] lg:mt-[32px] lg:grid-cols-2 lg:gap-x-[24px] lg:gap-y-[24px]">
@@ -91,7 +92,7 @@ export function Waitlist({ audience }: { audience: Audience }) {
                 name="fullName"
                 required
                 autoComplete="name"
-                placeholder="Simran Malhotra"
+                placeholder=""
                 className={inputClass}
               />
             </Field>
@@ -102,7 +103,7 @@ export function Waitlist({ audience }: { audience: Audience }) {
                 name="city"
                 required
                 autoComplete="address-level2"
-                placeholder="Ludhiana"
+                placeholder=""
                 className={inputClass}
               />
             </Field>
@@ -124,7 +125,7 @@ export function Waitlist({ audience }: { audience: Audience }) {
                   type="tel"
                   inputMode="numeric"
                   autoComplete="tel-national"
-                  placeholder="98765 43210"
+                  placeholder=""
                   className="h-full w-0 min-w-0 flex-1 rounded-r-[48px] bg-transparent pr-[24px] font-poppins text-[16px] text-ink outline-none placeholder:text-ink/50"
                 />
               </div>
@@ -135,7 +136,7 @@ export function Waitlist({ audience }: { audience: Audience }) {
                 Main hoon
               </legend>
               <div className="flex items-center gap-[18px]">
-                {ROLE_OPTIONS.map((option) => {
+                {AUDIENCE_OPTIONS.map((option) => {
                   const selected = role === option.value;
                   return (
                     <button

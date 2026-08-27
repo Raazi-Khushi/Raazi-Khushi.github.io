@@ -4,7 +4,7 @@ import Image from "next/image";
 import { SiteHeader } from "@/components/site-header";
 import { CtaButton } from "@/components/ui/cta-button";
 import { cn } from "@/lib/cn";
-import { HERO_COPY, type Audience } from "@/lib/content";
+import { AUDIENCE_COPY, type Audience } from "@/lib/content";
 
 type HeroProps = {
   audience: Audience;
@@ -15,7 +15,7 @@ export function Hero({ audience, onAudienceChange }: HeroProps) {
   // "Getting Married" renders the deep-teal hero card; "Parent" renders the
   // pale variation with the photo leading.
   const onDark = audience === "married";
-  const copy = HERO_COPY[audience];
+  const copy = AUDIENCE_COPY[audience].hero;
 
   const photo = (
     <div className="relative aspect-[567/490] w-full overflow-hidden rounded-[12px] lg:rounded-[24px]">

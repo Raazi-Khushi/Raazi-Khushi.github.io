@@ -1,10 +1,11 @@
 import Image from "next/image";
 import { EyebrowPill } from "@/components/ui/eyebrow-pill";
 import { cn } from "@/lib/cn";
-import { STEPS, type Audience } from "@/lib/content";
+import { AUDIENCE_COPY, SECTION_HEADINGS, type Audience } from "@/lib/content";
 
 export function HowItWorks({ audience }: { audience: Audience }) {
   const onPale = audience === "married";
+  const { steps } = AUDIENCE_COPY[audience];
 
   return (
     <section
@@ -13,14 +14,14 @@ export function HowItWorks({ audience }: { audience: Audience }) {
     >
       <div className="mx-auto max-w-[1440px] px-[16px] py-[50px] lg:px-[50px] lg:py-[80px]">
         <div className="flex flex-col items-center gap-[12px]">
-          <EyebrowPill onLightSurface={!onPale}>How It Work</EyebrowPill>
+          <EyebrowPill onLightSurface={!onPale}>{SECTION_HEADINGS.howItWorksEyebrow}</EyebrowPill>
           <h2 className="text-center font-poppins text-[36px] leading-[55px] font-medium text-deep-teal lg:text-[48px] lg:leading-[72px]">
-            Three Steps, One Decision
+            {SECTION_HEADINGS.howItWorks}
           </h2>
         </div>
 
         <ul className="mx-auto mt-[24px] grid gap-[12px] lg:mt-[40px] lg:max-w-[1130px] lg:grid-cols-3 lg:gap-[16px]">
-          {STEPS.map((step) => (
+          {steps.map((step) => (
             <li
               key={step.number}
               className="rounded-[12px] bg-white p-[24px] shadow-[0_2px_12px_rgba(27,77,92,0.06)]"
