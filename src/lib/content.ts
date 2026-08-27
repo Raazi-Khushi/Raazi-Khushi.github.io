@@ -123,11 +123,32 @@ export const AUDIENCE_COPY: Record<Audience, AudienceCopy> = {
   },
 };
 
+/** `iconClass` sizes each glyph to its own aspect ratio inside the 36px circle. */
 export const SOCIAL_LINKS = [
-  { icon: "/icons/linkedin.svg", label: "LinkedIn", href: "#", solid: true },
-  { icon: "/icons/youtube.svg", label: "YouTube", href: "#", solid: false },
-  { icon: "/icons/instagram.svg", label: "Instagram", href: "#", solid: false },
-  { icon: "/icons/facebook.svg", label: "Facebook", href: "#", solid: false },
+  {
+    icon: "/icons/mail.svg",
+    label: "Email",
+    href: "mailto:info@raazikhushi.com",
+    iconClass: "h-auto w-[16.8px]",
+  },
+  {
+    icon: "/icons/instagram.svg",
+    label: "Instagram",
+    href: "https://www.instagram.com/raazikhushi_/",
+    iconClass: "size-[16.8px]",
+  },
+  {
+    icon: "/icons/facebook.svg",
+    label: "Facebook",
+    href: "https://www.facebook.com/profile.php?id=61592028269179",
+    iconClass: "h-[16.8px] w-auto",
+  },
+  {
+    icon: "/icons/threads.svg",
+    label: "Threads",
+    href: "https://www.threads.com/@raazikhushi_",
+    iconClass: "size-[16.8px]",
+  },
 ] as const;
 
 export const FOOTER_TAGLINE = "Aaj Raazi, Kal Khushi.";

@@ -48,3 +48,18 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* Desktop only: hide the page scrollbar. Touch viewports already draw an
+   overlay scrollbar that costs no layout width, and hiding it there would
+   only remove the reader's position cue for nothing. Scrolling itself —
+   wheel, trackpad, keyboard, drag — is untouched. */
+@media (min-width: 1024px) {
+  html {
+    scrollbar-width: none;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    display: none;
+  }
+}
