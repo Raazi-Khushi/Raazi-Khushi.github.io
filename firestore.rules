@@ -1,0 +1,59 @@
+rules_version = '2';
+
+// Deploy with:  firebase deploy --only firestore:rules
+//
+// The landing page is a public static site with no server and no login, so
+// anonymous browsers must be able to CREATE waitlist docs. Everything else is
+// denied: nobody can read, edit, or delete signups from the client. Read them
+// in the Firebase console or via the Admin SDK.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions MUST live inside this match block. Declared at the top
+    // level they still compile, but `request` is out of scope there, so every
+    // call raises an evaluation error and errors are treated as deny — a valid
+    // signup gets permission-denied with no hint as to why.
+    function isValidDevice(device) {
+      return device is map
+        && device.keys().hasOnly(['os', 'browser', 'type', 'userAgent'])
+        && device.os is string && device.os.size() <= 40
+        && device.browser is string && device.browser.size() <= 60
+        && device.type in ['mobile', 'tablet', 'desktop']
+        && device.userAgent is string && device.userAgent.size() <= 300;
+    }
+
+    function isValidWaitlistEntry(data) {
+      return data.keys().hasOnly(['fullName', 'city', 'phone', 'role', 'createdAt', 'source', 'device'])
+        && data.keys().hasAll(['fullName', 'city', 'phone', 'role', 'createdAt'])
+        && data.fullName is string && data.fullName.size() > 0 && data.fullName.size() <= 100
+        && data.city is string && data.city.size() > 0 && data.city.size() <= 100
+        && data.phone is string && data.phone.matches('^[0-9]{10}$')
+        // 'suitor' is the stored name for the "getting married" audience; the
+        // UI's own label for it is deliberately different (see waitlist.ts).
+        && data.role in ['parent', 'suitor']
+        // serverTimestamp() resolves to request.time, so this pins createdAt to
+        // the server clock and rejects any client-supplied value.
+        && data.createdAt == request.time
+        && (!data.keys().hasAny(['source']) || (data.source is string && data.source.size() <= 200))
+        && (!data.keys().hasAny(['device']) || isValidDevice(data.device));
+    }
+
+    // The document ID is the phone number, which is what makes signups unique
+    // without granting anyone read access: a second signup on the same number
+    // targets an existing document, so Firestore classifies it as an `update`
+    // and the deny below rejects it. One number, one row, enforced server-side.
+    match /waitlist/{phone} {
+      allow read, update, delete: if false;
+
+      allow create: if isValidWaitlistEntry(request.resource.data)
+        // Without this, a client could pick any ID it liked and sidestep the
+        // uniqueness the ID is supposed to provide.
+        && phone == request.resource.data.phone;
+    }
+
+    // Anything not matched above stays closed.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
