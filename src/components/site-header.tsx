@@ -22,7 +22,7 @@ export function SiteHeader({ audience, onAudienceChange, onDark }: SiteHeaderPro
 
       <nav
         className={cn(
-          "absolute left-1/2 hidden -translate-x-1/2 items-center gap-[48px] font-noto text-[18px] lg:flex",
+          "absolute left-1/2 hidden -translate-x-1/2 items-center gap-[48px] font-noto text-[18px] transition-colors duration-500 ease-out lg:flex",
           onDark ? "text-white" : "text-deep-teal",
         )}
       >
@@ -42,7 +42,10 @@ export function SiteHeader({ audience, onAudienceChange, onDark }: SiteHeaderPro
         aria-label="Open menu"
         aria-expanded={menuOpen}
         onClick={() => setMenuOpen((open) => !open)}
-        className={cn("lg:hidden", onDark ? "text-white" : "text-deep-teal")}
+        className={cn(
+          "transition-colors duration-500 ease-out lg:hidden",
+          onDark ? "text-white" : "text-deep-teal",
+        )}
       >
         <MenuIcon />
       </button>

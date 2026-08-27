@@ -114,6 +114,9 @@ export function Waitlist({ audience }: { audience: Audience }) {
                   <ChevronDown />
                 </span>
                 <span aria-hidden className="h-[41px] w-px bg-deep-teal/20" />
+                {/* `w-0` is load-bearing: without it the input's default intrinsic
+                    width (size=20) sets the row's min-content, which pushes the
+                    whole form past its container on narrow phones. */}
                 <input
                   id={phoneId}
                   name="phone"
@@ -122,7 +125,7 @@ export function Waitlist({ audience }: { audience: Audience }) {
                   inputMode="numeric"
                   autoComplete="tel-national"
                   placeholder="98765 43210"
-                  className="h-full min-w-0 flex-1 rounded-r-[48px] bg-transparent pr-[24px] font-poppins text-[16px] text-ink outline-none placeholder:text-ink/50"
+                  className="h-full w-0 min-w-0 flex-1 rounded-r-[48px] bg-transparent pr-[24px] font-poppins text-[16px] text-ink outline-none placeholder:text-ink/50"
                 />
               </div>
             </Field>

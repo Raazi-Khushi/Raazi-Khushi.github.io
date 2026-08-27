@@ -22,3 +22,29 @@ body {
   font-family: var(--font-noto);
   -webkit-font-smoothing: antialiased;
 }
+
+/* The audience toggle mirrors the hero: photo and copy trade grid columns.
+   Naming both halves lets the browser tween them between their old and new
+   positions instead of snapping. Driven by `withViewTransition`. */
+::view-transition-group(hero-photo),
+::view-transition-group(hero-copy) {
+  animation-duration: 520ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Everything else (backgrounds, header, the section below) just cross-fades. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 380ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

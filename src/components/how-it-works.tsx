@@ -1,12 +1,16 @@
 import Image from "next/image";
 import { EyebrowPill } from "@/components/ui/eyebrow-pill";
+import { cn } from "@/lib/cn";
 import { STEPS, type Audience } from "@/lib/content";
 
 export function HowItWorks({ audience }: { audience: Audience }) {
   const onPale = audience === "married";
 
   return (
-    <section id="how-it-works" className={onPale ? "bg-pale" : "bg-white"}>
+    <section
+      id="how-it-works"
+      className={cn("transition-colors duration-500 ease-out", onPale ? "bg-pale" : "bg-white")}
+    >
       <div className="mx-auto max-w-[1440px] px-[16px] py-[50px] lg:px-[50px] lg:py-[80px]">
         <div className="flex flex-col items-center gap-[12px]">
           <EyebrowPill onLightSurface={!onPale}>How It Work</EyebrowPill>

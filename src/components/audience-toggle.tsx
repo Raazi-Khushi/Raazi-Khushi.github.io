@@ -17,7 +17,7 @@ export function AudienceToggle({ value, onChange, onDark, className }: AudienceT
       role="tablist"
       aria-label="Who are you here for?"
       className={cn(
-        "inline-flex items-center gap-[6px] rounded-[40px] p-[8px] lg:gap-[8px] lg:rounded-[61px]",
+        "inline-flex items-center gap-[6px] rounded-[40px] p-[8px] transition-colors duration-500 ease-out lg:gap-[8px] lg:rounded-[61px]",
         onDark ? "bg-teal-light" : "bg-white",
         className,
       )}
