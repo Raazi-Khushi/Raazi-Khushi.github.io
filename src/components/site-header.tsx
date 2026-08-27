@@ -1,24 +1,38 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
-import { AudienceToggle } from "@/components/audience-toggle";
 import { CtaButton } from "@/components/ui/cta-button";
 import { cn } from "@/lib/cn";
 import { NAV_LINKS, type Audience } from "@/lib/content";
 
+/** One lockup per audience. Both are 1000x830 with a transparent background. */
+const LOGO_SRC: Record<Audience, string> = {
+  parent: "/images/parent.png",
+  married: "/images/suitor.png",
+};
+
 type SiteHeaderProps = {
   audience: Audience;
-  onAudienceChange: (next: Audience) => void;
   /** Header sits on the deep-teal hero card. */
   onDark: boolean;
 };
 
-export function SiteHeader({ audience, onAudienceChange, onDark }: SiteHeaderProps) {
+export function SiteHeader({ audience, onDark }: SiteHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <header className="relative flex items-center justify-between">
-      <AudienceToggle value={audience} onChange={onAudienceChange} onDark={onDark} />
+      <a href="#home" aria-label="Raazi Khushi — home" className="transition-opacity hover:opacity-80">
+        <Image
+          src={LOGO_SRC[audience]}
+          alt="Raazi Khushi"
+          width={1000}
+          height={830}
+          priority
+          className="h-[52px] w-auto lg:h-[60px]"
+        />
+      </a>
 
       <nav
         className={cn(
