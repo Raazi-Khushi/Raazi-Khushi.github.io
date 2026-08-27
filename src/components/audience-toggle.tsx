@@ -32,8 +32,8 @@ export function AudienceToggle({ value, onChange, onDark, className }: AudienceT
             aria-selected={selected}
             onClick={() => onChange(option.value)}
             className={cn(
-              "rounded-full px-[20px] py-[8px] font-poppins text-[16px] font-medium whitespace-nowrap capitalize transition-colors",
-              "lg:px-[32px] lg:py-[14px] lg:text-[18px]",
+              "rounded-full px-[14px] py-[8px] font-poppins text-[14px] font-medium whitespace-nowrap capitalize transition-colors",
+              "sm:px-[20px] sm:text-[16px] lg:px-[32px] lg:py-[14px] lg:text-[18px]",
               selected && onDark && "bg-white text-deep-teal",
               selected && !onDark && "bg-deep-teal text-white",
               !selected && onDark && "text-white",
