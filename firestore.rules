@@ -6,6 +6,16 @@ rules_version = '2';
 // anonymous browsers must be able to CREATE waitlist docs. Everything else is
 // denied: nobody can read, edit, or delete signups from the client. Read them
 // in the Firebase console or via the Admin SDK.
+//
+// Two collections, both live:
+//
+//   waitlist    — the original, keyed by phone number. The site no longer
+//                 writes to it, but it holds real production signups, so its
+//                 rules stay exactly as they were shipped. Read it via the
+//                 Admin SDK (`npm run export:waitlist -- --collection waitlist`).
+//   waitlistv2  — what the form writes today, keyed by email. Email is now the
+//                 identity of a signup and phone is optional, which the old
+//                 phone-keyed collection cannot express.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -38,6 +48,9 @@ service cloud.firestore {
         && (!data.keys().hasAny(['device']) || isValidDevice(data.device));
     }
 
+    // LEGACY — holds production data. Do not change these conditions: the
+    // shape they describe is the shape of the documents already in there.
+    //
     // The document ID is the phone number, which is what makes signups unique
     // without granting anyone read access: a second signup on the same number
     // targets an existing document, so Firestore classifies it as an `update`
@@ -49,6 +62,47 @@ service cloud.firestore {
         // Without this, a client could pick any ID it liked and sidestep the
         // uniqueness the ID is supposed to provide.
         && phone == request.resource.data.phone;
+    }
+
+    // v2 keeps its own validator rather than sharing one with the legacy
+    // collection: the two disagree about which fields are required, and a
+    // shared helper would have to be loosened to the weaker of the two.
+    function isValidWaitlistV2Entry(data) {
+      return data.keys().hasOnly(['fullName', 'city', 'email', 'phone', 'role', 'createdAt', 'source', 'device'])
+        // No 'phone' here — a signup without a number is now valid.
+        && data.keys().hasAll(['fullName', 'city', 'email', 'role', 'createdAt'])
+        && data.fullName is string && data.fullName.size() > 0 && data.fullName.size() <= 100
+        && data.city is string && data.city.size() > 0 && data.city.size() <= 100
+        // Loose on purpose — enough to reject a missing @ or domain, not an RFC
+        // 5322 parser. 254 is RFC 5321's ceiling on a whole address. The client
+        // applies the identical pattern (EMAIL_PATTERN in waitlist.tsx); keep
+        // the two in step, or a typo here becomes a permission-denied that the
+        // client mistakes for a repeat signup and swallows.
+        && data.email is string
+        && data.email.size() <= 254
+        && data.email.matches('^[a-z0-9._%+-]+@[a-z0-9.-]+[.][a-z]{2,}$')
+        // Optional now, but still 10 digits when given.
+        && (!data.keys().hasAny(['phone']) || (data.phone is string && data.phone.matches('^[0-9]{10}$')))
+        && data.role in ['parent', 'suitor']
+        && data.createdAt == request.time
+        && (!data.keys().hasAny(['source']) || (data.source is string && data.source.size() <= 200))
+        && (!data.keys().hasAny(['device']) || isValidDevice(data.device));
+    }
+
+    // Same trick as the legacy collection, one identity along: the document ID
+    // is the email address, so a second signup on the same address lands on an
+    // existing document, Firestore calls that an `update`, and the deny below
+    // rejects it. One email, one row, enforced server-side and without granting
+    // anyone read access to check first.
+    //
+    // The client lower-cases the address before writing, and the ID rule below
+    // ties the document name to that value, so Person@x.com and person@x.com
+    // cannot both get a row.
+    match /waitlistv2/{email} {
+      allow read, update, delete: if false;
+
+      allow create: if isValidWaitlistV2Entry(request.resource.data)
+        && email == request.resource.data.email;
     }
 
     // Anything not matched above stays closed.
