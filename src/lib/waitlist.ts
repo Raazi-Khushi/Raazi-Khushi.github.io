@@ -2,8 +2,15 @@ import { getDb } from "@/lib/firebase";
 import { getDeviceInfo } from "@/lib/device";
 import type { Audience } from "@/lib/content";
 
-/** Firestore collection holding one document per waitlist signup. */
-export const WAITLIST_COLLECTION = "waitlist";
+/**
+ * Firestore collection holding one document per waitlist signup, keyed by email.
+ *
+ * The original `waitlist` collection is keyed by phone number and still holds
+ * production signups; it is read-only from here on. Phone is optional now, so a
+ * phone-keyed collection can no longer identify a signup — hence a new one
+ * rather than a migration, which would have meant rewriting live documents.
+ */
+export const WAITLIST_COLLECTION = "waitlistv2";
 
 /** Query param that carries campaign provenance, e.g. `/?source=instagram-bio`. */
 const SOURCE_PARAM = "source";
@@ -29,7 +36,12 @@ const ROLE_BY_AUDIENCE: Record<Audience, string> = {
 export type WaitlistEntry = {
   fullName: string;
   city: string;
-  /** 10 digits, no country code. */
+  /**
+   * Trimmed and lower-cased by the form before it gets here — it becomes the
+   * document ID, and two casings of one address must not become two rows.
+   */
+  email: string;
+  /** 10 digits, no country code. Optional: `""` when the visitor skipped it. */
   phone: string;
   role: Audience;
 };
@@ -42,13 +54,13 @@ function getSource(): string {
 }
 
 /**
- * Stores a signup, keyed by phone number so the same person cannot appear
- * twice. Re-submitting an existing number is a no-op that resolves normally —
+ * Stores a signup, keyed by email address so the same person cannot appear
+ * twice. Re-submitting an existing address is a no-op that resolves normally —
  * the caller shows the usual success message either way, since telling a
  * visitor "you already signed up" is noise, not information.
  *
  * The first entry wins: a repeat submission never overwrites the original
- * name, city, role or timestamp.
+ * name, city, phone, role or timestamp.
  */
 export async function submitWaitlistEntry(entry: WaitlistEntry) {
   const db = getDb();
@@ -59,10 +71,14 @@ export async function submitWaitlistEntry(entry: WaitlistEntry) {
   try {
     // Writing to a fixed ID rather than addDoc()'s random one is what enforces
     // uniqueness — see the comment in firestore.rules.
-    await setDoc(doc(db, WAITLIST_COLLECTION, entry.phone), {
+    await setDoc(doc(db, WAITLIST_COLLECTION, entry.email), {
       fullName: entry.fullName,
       city: entry.city,
-      phone: entry.phone,
+      email: entry.email,
+      // Omitted rather than stored as "" when blank: the rules check the digit
+      // format of whatever `phone` holds, so an empty string would be rejected
+      // outright instead of read as "not given".
+      ...(entry.phone ? { phone: entry.phone } : {}),
       role: ROLE_BY_AUDIENCE[entry.role],
       // Client clocks lie; stamp on the server so ordering is trustworthy.
       createdAt: serverTimestamp(),
@@ -74,7 +90,7 @@ export async function submitWaitlistEntry(entry: WaitlistEntry) {
       device: getDeviceInfo(),
     });
   } catch (cause) {
-    // A duplicate number is rejected as `permission-denied`, and so is a
+    // A duplicate address is rejected as `permission-denied`, and so is a
     // genuinely malformed document — the codes are identical, so this branch
     // cannot tell them apart. Client-side validation runs first and covers
     // every field the rules check, which makes a duplicate overwhelmingly the

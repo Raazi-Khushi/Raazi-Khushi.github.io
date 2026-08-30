@@ -19,6 +19,7 @@ type Status = "idle" | "sending" | "done" | "error";
 export function Waitlist({ audience }: { audience: Audience }) {
   const nameId = useId();
   const cityId = useId();
+  const emailId = useId();
   const phoneId = useId();
 
   const [pickedRole, setPickedRole] = useState<Audience | null>(null);
@@ -39,15 +40,40 @@ export function Waitlist({ audience }: { audience: Audience }) {
 
     const fullName = String(data.get("fullName") ?? "").trim();
     const city = String(data.get("city") ?? "").trim();
+    // Lower-cased because it becomes the Firestore document ID, and one address
+    // in two casings must not become two signups.
+    const email = String(data.get("email") ?? "").trim().toLowerCase();
+    // Optional — blank means the visitor skipped it, and nothing is stored.
     const phone = String(data.get("phone") ?? "").replace(/\s+/g, "");
 
-    if (!fullName || !city || !phone) {
+    if (!fullName || !city || !email) {
       setStatus("error");
-      setError("Naam, sheher aur phone — teeno chahiye.");
+      setError("Naam, sheher aur email — teeno chahiye.");
       return;
     }
 
-    if (!/^\d{10}$/.test(phone)) {
+    // The rules cap both at 100. Without this check an over-long name comes
+    // back as permission-denied, which submitWaitlistEntry reads as a repeat
+    // signup — so the visitor would see "shukriya" for a row that was never
+    // written. The inputs carry maxLength too; this covers a paste that beats it.
+    if (fullName.length > TEXT_MAX_LENGTH || city.length > TEXT_MAX_LENGTH) {
+      setStatus("error");
+      setError("Naam ya sheher bahut lamba hai.");
+      return;
+    }
+
+    // Deliberately the same pattern and cap as firestore.rules: a write the
+    // rules reject comes back as `permission-denied`, which submitWaitlistEntry
+    // reads as a repeat signup and swallows. Anything this check lets through
+    // must therefore be something the rules also accept.
+    if (!EMAIL_PATTERN.test(email) || email.length > EMAIL_MAX_LENGTH) {
+      setStatus("error");
+      setError("Email sahi nahi lag raha.");
+      return;
+    }
+
+    // Only checked when given: an empty box is a valid submission now.
+    if (phone && !/^\d{10}$/.test(phone)) {
       setStatus("error");
       setError("Phone number 10 digit ka hona chahiye.");
       return;
@@ -63,7 +89,7 @@ export function Waitlist({ audience }: { audience: Audience }) {
     setError("");
 
     try {
-      await submitWaitlistEntry({ fullName, city, phone, role });
+      await submitWaitlistEntry({ fullName, city, email, phone, role });
     } catch (cause) {
       console.error("Waitlist submit failed", cause);
       setStatus("error");
@@ -80,10 +106,11 @@ export function Waitlist({ audience }: { audience: Audience }) {
     <section id="waitlist" className="relative isolate overflow-hidden">
       <Image
         src="/images/waitlist-bg.png"
-        alt=""
+        alt="waitlist"
         fill
         sizes="100vw"
         className="-z-20 object-cover"
+        loading="eager"
       />
       <div className="absolute inset-0 -z-10 bg-deep-teal/85" />
 
@@ -110,6 +137,7 @@ export function Waitlist({ audience }: { audience: Audience }) {
                 name="fullName"
                 required
                 autoComplete="name"
+                maxLength={TEXT_MAX_LENGTH}
                 placeholder=""
                 className={inputClass}
               />
@@ -121,12 +149,27 @@ export function Waitlist({ audience }: { audience: Audience }) {
                 name="city"
                 required
                 autoComplete="address-level2"
+                maxLength={TEXT_MAX_LENGTH}
                 placeholder=""
                 className={inputClass}
               />
             </Field>
 
-            <Field id={phoneId} label="Phone Number">
+            <Field id={emailId} label="Email">
+              <input
+                id={emailId}
+                name="email"
+                required
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                maxLength={EMAIL_MAX_LENGTH}
+                placeholder=""
+                className={inputClass}
+              />
+            </Field>
+
+            <Field id={phoneId} label="Phone Number (optional)">
               <div className="flex h-[64px] items-center gap-[12px] rounded-[48px] bg-field pl-[24px]">
                 <span className="flex items-center gap-[8px] font-poppins text-[16px] text-deep-teal">
                   +91
@@ -139,7 +182,6 @@ export function Waitlist({ audience }: { audience: Audience }) {
                 <input
                   id={phoneId}
                   name="phone"
-                  required
                   type="tel"
                   inputMode="numeric"
                   autoComplete="tel-national"
@@ -201,6 +243,20 @@ export function Waitlist({ audience }: { audience: Audience }) {
 
 const inputClass =
   "h-[64px] w-full rounded-[48px] bg-field px-[24px] font-poppins text-[16px] text-ink outline-none placeholder:text-ink/50";
+
+/**
+ * Kept in step with the `email` rule in firestore.rules — a mismatch turns a
+ * typo into a silent lost signup rather than an inline error. Loose on purpose:
+ * the aim is to catch a missing @ or domain, not to adjudicate RFC 5322.
+ * Lower-case only, because it is applied to an already lower-cased address.
+ */
+const EMAIL_PATTERN = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
+
+/** RFC 5321's limit on a full address, and the cap the rules enforce. */
+const EMAIL_MAX_LENGTH = 254;
+
+/** What firestore.rules allows for `fullName` and `city`. */
+const TEXT_MAX_LENGTH = 100;
 
 function Field({
   id,

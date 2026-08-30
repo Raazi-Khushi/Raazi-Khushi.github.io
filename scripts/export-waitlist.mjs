@@ -1,24 +1,39 @@
 // Exports the waitlist collection to CSV or JSON.
 //
-//   npm run export:waitlist              -> exports/waitlist-<timestamp>.csv
-//   npm run export:waitlist -- --json    -> same data as JSON
-//   npm run export:waitlist -- --stdout  -> print instead of writing a file
+//   npm run export:waitlist                            -> exports/waitlistv2-<timestamp>.csv
+//   npm run export:waitlist -- --json                  -> same data as JSON
+//   npm run export:waitlist -- --stdout                -> print instead of writing a file
+//   npm run export:waitlist -- --collection waitlist   -> the legacy phone-keyed collection
 //
 // Runs through the Admin SDK, which bypasses security rules — that is why the
 // site's own rules can keep reads closed to the public. Requires a service
 // account key; see the error message in main() for how to get one.
+//
+// Reads only. Nothing here writes, updates or deletes a document.
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-const COLLECTION = "waitlist";
+/** Where the site writes today. `waitlist` is the legacy phone-keyed one. */
+const DEFAULT_COLLECTION = "waitlistv2";
 
-/** Flattens a Firestore document into one spreadsheet row. */
+/** Only these may be exported — a typo must not silently produce an empty file. */
+const COLLECTIONS = [DEFAULT_COLLECTION, "waitlist"];
+
+/**
+ * Flattens a Firestore document into one spreadsheet row.
+ *
+ * Both collections go through here, so no column assumes which one it came
+ * from: the ID is a phone number in `waitlist` and an email in `waitlistv2`,
+ * and a field absent from one collection exports as blank rather than missing.
+ */
 export function toRow(id, d) {
   return {
-    phone: id,
+    id,
     fullName: d.fullName ?? "",
     city: d.city ?? "",
+    email: d.email ?? "",
+    phone: d.phone ?? "",
     role: d.role ?? "",
     // Firestore Timestamp -> ISO 8601, which both Excel and Sheets parse.
     createdAt: d.createdAt?.toDate?.().toISOString() ?? "",
@@ -54,6 +69,13 @@ async function main() {
   const asJson = args.includes("--json");
   const toStdout = args.includes("--stdout");
 
+  const flagIndex = args.indexOf("--collection");
+  const collection = flagIndex === -1 ? DEFAULT_COLLECTION : args[flagIndex + 1];
+  if (!COLLECTIONS.includes(collection)) {
+    console.error(`Unknown collection "${collection ?? ""}". Use one of: ${COLLECTIONS.join(", ")}`);
+    process.exit(1);
+  }
+
   if (!existsSync(resolve(keyPath))) {
     console.error(
       `Service account key not found at: ${keyPath}\n\n` +
@@ -73,12 +95,12 @@ async function main() {
 
   // Streamed rather than get()'d so memory stays flat however long the list grows.
   const rows = [];
-  for await (const doc of getFirestore().collection(COLLECTION).orderBy("createdAt").stream()) {
+  for await (const doc of getFirestore().collection(collection).orderBy("createdAt").stream()) {
     rows.push(toRow(doc.id, doc.data()));
   }
 
   if (!rows.length) {
-    console.error(`No documents in "${COLLECTION}" — nothing to export.`);
+    console.error(`No documents in "${collection}" — nothing to export.`);
     process.exit(0);
   }
 
@@ -92,9 +114,9 @@ async function main() {
   // Timestamped filenames so repeated exports never silently overwrite an earlier one.
   const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
   mkdirSync(resolve("exports"), { recursive: true });
-  const file = resolve("exports", `waitlist-${stamp}.${asJson ? "json" : "csv"}`);
+  const file = resolve("exports", `${collection}-${stamp}.${asJson ? "json" : "csv"}`);
   writeFileSync(file, output, "utf8");
-  console.log(`Exported ${rows.length} signup(s) -> ${file}`);
+  console.log(`Exported ${rows.length} signup(s) from ${collection} -> ${file}`);
   process.exit(0);
 }
 
