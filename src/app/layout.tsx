@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Noto_Sans, Poppins } from "next/font/google";
+import { MetaPixel, MetaPixelNoScript } from "@/components/meta-pixel";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -27,7 +28,13 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${poppins.variable} ${notoSans.variable}`}>{children}</body>
+      <head>
+        <MetaPixel />
+      </head>
+      <body className={`${poppins.variable} ${notoSans.variable}`}>
+        <MetaPixelNoScript />
+        {children}
+      </body>
     </html>
   );
 }
