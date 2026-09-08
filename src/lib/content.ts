@@ -1,10 +1,10 @@
 export type Audience = "married" | "parent";
 
 export const NAV_LINKS = [
-  { label: "Home", href: "#home" },
   { label: "How it works", href: "#how-it-works" },
   { label: "Trust", href: "#trust" },
   { label: "Waitlist", href: "#waitlist" },
+  { label: "Policy", href: "/privacy-policy" },
 ] as const;
 
 export const AUDIENCE_OPTIONS = [
